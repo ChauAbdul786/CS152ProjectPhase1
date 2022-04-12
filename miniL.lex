@@ -6,6 +6,7 @@
 %}
 
    /* some common rules */
+LETTER [a-z|A-Z]
 DIGIT [0-9]
 COMMENT ##.*\n
 %%
@@ -60,9 +61,13 @@ COMMENT ##.*\n
 "%"	{printf("MOD\n"); currPos += yyleng;}
 ","	{printf("COMMA\n"); currPos += yyleng;}
 ";"	{printf("SEMICOLON\n"); currPos += yyleng;}
+{DIGIT}+	{printf("NUMBER %s\n", yytext); currPos += yyleng;}
+[ \t]+	{currPos += yyleng;}
 {COMMENT} {currLine++; currPos = 1;}
+{LETTER}|{LETTER}({LETTER}|{DIGIT}|_)*({LETTER}|{DIGIT})	{printf("IDENT %s\n", yytext); currPos += yyleng;}
+({DIGIT}|_)({LETTER}|{DIGIT}|_)*({LETTER}|{DIGIT})	{printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", currLine, currPos, yytext); exit(0);}
+{LETTER}({LETTER}|{DIGIT}|_)*(_)	{printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore\n", currLine, currPos, yytext); exit(0);}
 "\n"	{currLine++; currPos = 1;}
-" "	{currPos++;}
 
 .	{printf("Error at line %d, column %d: unrecognized symbol \"%s\"\n", currLine, currPos, yytext); exit(0);}
 %%
@@ -70,5 +75,14 @@ COMMENT ##.*\n
 
 int main(int argc, char ** argv)
 {
+   if(argc >= 2){
+      yyin = fopen(argv[1], "r");
+      if(yyin == NULL){
+         yyin = stdin;
+      }
+   }else{
+      yyin = stdin;
+   }
+
    yylex();
 }
